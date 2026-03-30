@@ -7,6 +7,8 @@ import com.ceiba.btgpactualms.model.FondoCliente;
 import com.ceiba.btgpactualms.model.Transaccion;
 import com.ceiba.btgpactualms.repository.ClienteRepository;
 import com.ceiba.btgpactualms.repository.TransaccionRepository;
+import com.ceiba.btgpactualms.service.notification.NotificacionFactory;
+import com.ceiba.btgpactualms.service.notification.NotificacionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +22,7 @@ public class ClienteService {
     private final ClienteRepository clienteRepository;
     private final FondoService fondoService;
     private final TransaccionRepository transaccionRepository;
+    private final NotificacionFactory notificacionFactory;
 
     public Cliente suscribirse(String clienteId, SuscripcionRequest request) {
 
@@ -53,6 +56,20 @@ public class ClienteService {
 
         // Agregar fondo
         cliente.getFondos().add(fondoCliente);
+
+        String mensaje = "Te has suscrito al fondo " + fondo.getNombre();
+
+        // Elegir canal SMS o EMAIL
+        NotificacionService notificacionService = notificacionFactory
+                .obtener(cliente.getPreferenciaNotificacion());
+
+        if (notificacionService != null) {
+            String destino = cliente.getPreferenciaNotificacion().equals("EMAIL")
+                    ? cliente.getEmail()
+                    : cliente.getTelefono();
+
+            notificacionService.enviar(mensaje, destino);
+        }
 
         // Agregar al historial de transacciones
         Transaccion tx = Transaccion.builder()
@@ -98,6 +115,20 @@ public class ClienteService {
                 .monto(fondo.getMonto())
                 .fecha(java.time.LocalDateTime.now())
                 .build();
+
+        String mensaje = "Has cancelado el fondo " + fondo.getNombre();
+
+        // Elegir canal SMS o EMAIL
+        NotificacionService notificacionService = notificacionFactory
+                .obtener(cliente.getPreferenciaNotificacion());
+
+        if (notificacionService != null) {
+            String destino = cliente.getPreferenciaNotificacion().equals("EMAIL")
+                    ? cliente.getEmail()
+                    : cliente.getTelefono();
+
+            notificacionService.enviar(mensaje, destino);
+        }
 
         transaccionRepository.save(tx);
 
