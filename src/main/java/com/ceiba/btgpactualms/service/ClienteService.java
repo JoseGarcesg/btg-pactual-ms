@@ -4,18 +4,22 @@ import com.ceiba.btgpactualms.dto.SuscripcionRequest;
 import com.ceiba.btgpactualms.model.Cliente;
 import com.ceiba.btgpactualms.model.Fondo;
 import com.ceiba.btgpactualms.model.FondoCliente;
+import com.ceiba.btgpactualms.model.Transaccion;
 import com.ceiba.btgpactualms.repository.ClienteRepository;
+import com.ceiba.btgpactualms.repository.TransaccionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class ClienteService {
     private final ClienteRepository clienteRepository;
     private final FondoService fondoService;
+    private final TransaccionRepository transaccionRepository;
 
     public Cliente suscribirse(String clienteId, SuscripcionRequest request) {
 
@@ -50,6 +54,18 @@ public class ClienteService {
         // Agregar fondo
         cliente.getFondos().add(fondoCliente);
 
+        // Agregar al historial de transacciones
+        Transaccion tx = Transaccion.builder()
+                .id(java.util.UUID.randomUUID().toString())
+                .clienteId(cliente.getId())
+                .fondoId(fondo.getId())
+                .tipo("APERTURA")
+                .monto(fondo.getMontoMinimo())
+                .fecha(java.time.LocalDateTime.now())
+                .build();
+
+        transaccionRepository.save(tx);
+
         return clienteRepository.save(cliente);
     }
 
@@ -73,6 +89,22 @@ public class ClienteService {
         // 🔥 ELIMINAR FONDO
         cliente.getFondos().remove(fondo);
 
+        // Agregar al historial de transacciones
+        Transaccion tx = Transaccion.builder()
+                .id(java.util.UUID.randomUUID().toString())
+                .clienteId(cliente.getId())
+                .fondoId(fondo.getFondoId())
+                .tipo("CANCELACION")
+                .monto(fondo.getMonto())
+                .fecha(java.time.LocalDateTime.now())
+                .build();
+
+        transaccionRepository.save(tx);
+
         return clienteRepository.save(cliente);
+    }
+
+    public List<Transaccion> historial(String clienteId) {
+        return transaccionRepository.findByClienteId(clienteId);
     }
 }

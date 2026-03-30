@@ -2,6 +2,7 @@ package com.ceiba.btgpactualms.controller;
 
 import com.ceiba.btgpactualms.dto.SuscripcionRequest;
 import com.ceiba.btgpactualms.model.Cliente;
+import com.ceiba.btgpactualms.model.Transaccion;
 import com.ceiba.btgpactualms.repository.ClienteRepository;
 import com.ceiba.btgpactualms.service.ClienteService;
 import lombok.RequiredArgsConstructor;
@@ -42,5 +43,10 @@ public class ClienteController {
             @PathVariable Integer fondoId
     ) {
         return clienteService.cancelarFondo(id, fondoId);
+    }
+
+    @GetMapping("/{id}/transacciones")
+    public List<Transaccion> historial(@PathVariable String id) {
+        return clienteService.historial(id);
     }
 }
