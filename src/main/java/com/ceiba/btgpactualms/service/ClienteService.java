@@ -1,6 +1,7 @@
 package com.ceiba.btgpactualms.service;
 
 import com.ceiba.btgpactualms.dto.SuscripcionRequest;
+import com.ceiba.btgpactualms.exception.BusinessException;
 import com.ceiba.btgpactualms.model.Cliente;
 import com.ceiba.btgpactualms.model.Fondo;
 import com.ceiba.btgpactualms.model.FondoCliente;
@@ -27,13 +28,13 @@ public class ClienteService {
     public Cliente suscribirse(String clienteId, SuscripcionRequest request) {
 
         Cliente cliente = clienteRepository.findById(clienteId)
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+                .orElseThrow(() -> new BusinessException("Cliente no encontrado"));
 
         Fondo fondo = fondoService.getById(request.getFondoId())
-                .orElseThrow(() -> new RuntimeException("Fondo no existe"));
+                .orElseThrow(() -> new BusinessException("Fondo no existe"));
 
         if (cliente.getSaldo() < fondo.getMontoMinimo()) {
-            throw new RuntimeException(
+            throw new BusinessException(
                     "No tiene saldo disponible para vincularse al fondo " + fondo.getNombre()
             );
         }
@@ -89,16 +90,16 @@ public class ClienteService {
     public Cliente cancelarFondo(String clienteId, Integer fondoId) {
 
         Cliente cliente = clienteRepository.findById(clienteId)
-                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+                .orElseThrow(() -> new BusinessException("Cliente no encontrado"));
 
         if (cliente.getFondos() == null || cliente.getFondos().isEmpty()) {
-            throw new RuntimeException("El cliente no tiene fondos suscritos");
+            throw new BusinessException("El cliente no tiene fondos suscritos");
         }
 
         FondoCliente fondo = cliente.getFondos().stream()
                 .filter(f -> f.getFondoId().equals(fondoId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Fondo no encontrado en el cliente"));
+                .orElseThrow(() -> new BusinessException("Fondo no encontrado en el cliente"));
 
         // 🔥 DEVOLVER DINERO
         cliente.setSaldo(cliente.getSaldo() + fondo.getMonto());
@@ -136,6 +137,9 @@ public class ClienteService {
     }
 
     public List<Transaccion> historial(String clienteId) {
+        // 🔥 VALIDAR CLIENTE
+        clienteRepository.findById(clienteId)
+                .orElseThrow(() -> new BusinessException("Cliente no encontrado"));
         return transaccionRepository.findByClienteId(clienteId);
     }
 }
