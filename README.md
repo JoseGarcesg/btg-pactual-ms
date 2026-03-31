@@ -1,4 +1,8 @@
-# 🚀 BTG Pactual MS - Backend Service
+# Parte 2: Solución
+## Query
+https://github.com/JoseGarcesg/btg-pactual-ms/blob/main/BTG-query.sql
+
+# 🚀Parte 1: BTG Pactual MS - Backend Service
 
 Backend desarrollado en **Java 21 + Spring Boot 3**, orientado a arquitectura moderna con autenticación JWT, documentación OpenAPI y base de datos MongoDB Atlas.
 
