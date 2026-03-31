@@ -22,7 +22,7 @@ public class Cliente {
     private String nombre;
     private String email;
     private String telefono;
-    private String preferenciaNotificacion;
+    private CanalNotificacion preferenciaNotificacion;
 
     private Double saldo;
 
