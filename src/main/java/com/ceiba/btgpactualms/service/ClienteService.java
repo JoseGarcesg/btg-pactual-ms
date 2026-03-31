@@ -25,13 +25,24 @@ public class ClienteService {
     private final TransaccionRepository transaccionRepository;
     private final NotificacionFactory notificacionFactory;
 
-    public Cliente suscribirse(String clienteId, SuscripcionRequest request) {
+    public Cliente suscribirse(SuscripcionRequest request) {
 
-        Cliente cliente = clienteRepository.findById(clienteId)
+        Cliente cliente = clienteRepository.findById(request.getClienteId())
                 .orElseThrow(() -> new BusinessException("Cliente no encontrado"));
 
         Fondo fondo = fondoService.getById(request.getFondoId())
                 .orElseThrow(() -> new BusinessException("Fondo no existe"));
+
+        if (request.getMonto() < fondo.getMontoMinimo()) {
+            throw new BusinessException(
+                    "El monto mínimo para este fondo es: " + fondo.getMontoMinimo()
+            );
+        }
+
+        if (cliente.getSaldo() < request.getMonto()) {
+            throw new BusinessException(
+                    "Saldo insuficiente para realizar la suscripción");
+        }
 
         if (cliente.getSaldo() < fondo.getMontoMinimo()) {
             throw new BusinessException(
@@ -48,12 +59,12 @@ public class ClienteService {
         FondoCliente fondoCliente = FondoCliente.builder()
                 .fondoId(fondo.getId())
                 .nombre(fondo.getNombre())
-                .monto(fondo.getMontoMinimo())
+                .monto(request.getMonto())
                 .fechaApertura(LocalDate.now())
                 .build();
 
         // Restar saldo
-        cliente.setSaldo(cliente.getSaldo() - fondo.getMontoMinimo());
+        cliente.setSaldo(cliente.getSaldo() - request.getMonto());
 
         // Agregar fondo
         cliente.getFondos().add(fondoCliente);
@@ -78,7 +89,7 @@ public class ClienteService {
                 .clienteId(cliente.getId())
                 .fondoId(fondo.getId())
                 .tipo("APERTURA")
-                .monto(fondo.getMontoMinimo())
+                .monto(request.getMonto())
                 .fecha(java.time.LocalDateTime.now())
                 .build();
 
