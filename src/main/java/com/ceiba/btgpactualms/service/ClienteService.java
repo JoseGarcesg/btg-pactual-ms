@@ -30,6 +30,12 @@ public class ClienteService {
         Fondo fondo = fondoService.getById(request.getFondoId())
                 .orElseThrow(() -> new BusinessException("Fondo no existe"));
 
+        if (cliente.getSaldo() < fondo.getMontoMinimo()) {
+            throw new BusinessException(
+                    "No tiene saldo disponible para vincularse al fondo " + fondo.getNombre()
+            );
+        }
+
         if (request.getMonto() < fondo.getMontoMinimo()) {
             throw new BusinessException(
                     "El monto mínimo para este fondo es: " + fondo.getMontoMinimo()
@@ -39,12 +45,6 @@ public class ClienteService {
         if (cliente.getSaldo() < request.getMonto()) {
             throw new BusinessException(
                     "Saldo insuficiente para realizar la suscripción");
-        }
-
-        if (cliente.getSaldo() < fondo.getMontoMinimo()) {
-            throw new BusinessException(
-                    "No tiene saldo disponible para vincularse al fondo " + fondo.getNombre()
-            );
         }
 
         // Inicializar lista si es null
@@ -148,4 +148,6 @@ public class ClienteService {
         System.out.println("destino: " + destino);
         notificacionService.enviar(mensaje, destino);
     }
+
+
 }
