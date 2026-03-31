@@ -2,10 +2,7 @@ package com.ceiba.btgpactualms.service;
 
 import com.ceiba.btgpactualms.dto.SuscripcionRequest;
 import com.ceiba.btgpactualms.exception.BusinessException;
-import com.ceiba.btgpactualms.model.Cliente;
-import com.ceiba.btgpactualms.model.Fondo;
-import com.ceiba.btgpactualms.model.FondoCliente;
-import com.ceiba.btgpactualms.model.Transaccion;
+import com.ceiba.btgpactualms.model.*;
 import com.ceiba.btgpactualms.repository.ClienteRepository;
 import com.ceiba.btgpactualms.repository.TransaccionRepository;
 import com.ceiba.btgpactualms.service.notification.NotificacionFactory;
@@ -25,13 +22,24 @@ public class ClienteService {
     private final TransaccionRepository transaccionRepository;
     private final NotificacionFactory notificacionFactory;
 
-    public Cliente suscribirse(String clienteId, SuscripcionRequest request) {
+    public Cliente suscribirse(SuscripcionRequest request) {
 
-        Cliente cliente = clienteRepository.findById(clienteId)
+        Cliente cliente = clienteRepository.findById(request.getClienteId())
                 .orElseThrow(() -> new BusinessException("Cliente no encontrado"));
 
         Fondo fondo = fondoService.getById(request.getFondoId())
                 .orElseThrow(() -> new BusinessException("Fondo no existe"));
+
+        if (request.getMonto() < fondo.getMontoMinimo()) {
+            throw new BusinessException(
+                    "El monto mínimo para este fondo es: " + fondo.getMontoMinimo()
+            );
+        }
+
+        if (cliente.getSaldo() < request.getMonto()) {
+            throw new BusinessException(
+                    "Saldo insuficiente para realizar la suscripción");
+        }
 
         if (cliente.getSaldo() < fondo.getMontoMinimo()) {
             throw new BusinessException(
@@ -48,37 +56,27 @@ public class ClienteService {
         FondoCliente fondoCliente = FondoCliente.builder()
                 .fondoId(fondo.getId())
                 .nombre(fondo.getNombre())
-                .monto(fondo.getMontoMinimo())
+                .monto(request.getMonto())
                 .fechaApertura(LocalDate.now())
                 .build();
 
         // Restar saldo
-        cliente.setSaldo(cliente.getSaldo() - fondo.getMontoMinimo());
+        cliente.setSaldo(cliente.getSaldo() - request.getMonto());
 
         // Agregar fondo
         cliente.getFondos().add(fondoCliente);
 
         String mensaje = "Te has suscrito al fondo " + fondo.getNombre();
 
-        // Elegir canal SMS o EMAIL
-        NotificacionService notificacionService = notificacionFactory
-                .obtener(cliente.getPreferenciaNotificacion());
-
-        if (notificacionService != null) {
-            String destino = cliente.getPreferenciaNotificacion().equals("EMAIL")
-                    ? cliente.getEmail()
-                    : cliente.getTelefono();
-
-            notificacionService.enviar(mensaje, destino);
-        }
+        enviarNotificacion(cliente, mensaje);
 
         // Agregar al historial de transacciones
         Transaccion tx = Transaccion.builder()
                 .id(java.util.UUID.randomUUID().toString())
                 .clienteId(cliente.getId())
                 .fondoId(fondo.getId())
-                .tipo("APERTURA")
-                .monto(fondo.getMontoMinimo())
+                .tipo(TipoTransaccion.APERTURA)
+                .monto(request.getMonto())
                 .fecha(java.time.LocalDateTime.now())
                 .build();
 
@@ -112,24 +110,14 @@ public class ClienteService {
                 .id(java.util.UUID.randomUUID().toString())
                 .clienteId(cliente.getId())
                 .fondoId(fondo.getFondoId())
-                .tipo("CANCELACION")
+                .tipo(TipoTransaccion.CANCELACION)
                 .monto(fondo.getMonto())
                 .fecha(java.time.LocalDateTime.now())
                 .build();
 
         String mensaje = "Has cancelado el fondo " + fondo.getNombre();
 
-        // Elegir canal SMS o EMAIL
-        NotificacionService notificacionService = notificacionFactory
-                .obtener(cliente.getPreferenciaNotificacion());
-
-        if (notificacionService != null) {
-            String destino = cliente.getPreferenciaNotificacion().equals("EMAIL")
-                    ? cliente.getEmail()
-                    : cliente.getTelefono();
-
-            notificacionService.enviar(mensaje, destino);
-        }
+        enviarNotificacion(cliente, mensaje);
 
         transaccionRepository.save(tx);
 
@@ -141,5 +129,23 @@ public class ClienteService {
         clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new BusinessException("Cliente no encontrado"));
         return transaccionRepository.findByClienteId(clienteId);
+    }
+
+    private void enviarNotificacion(Cliente cliente, String mensaje) {
+
+        NotificacionService notificacionService =
+                notificacionFactory.obtener(cliente.getPreferenciaNotificacion());
+
+        System.out.println("enviando Notificacion ");
+
+        if (notificacionService == null) return;
+
+        String destino = cliente.getPreferenciaNotificacion().equals(CanalNotificacion.EMAIL)
+                ? cliente.getEmail()
+                : cliente.getTelefono();
+
+
+        System.out.println("destino: " + destino);
+        notificacionService.enviar(mensaje, destino);
     }
 }

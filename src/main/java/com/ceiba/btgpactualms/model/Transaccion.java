@@ -20,7 +20,7 @@ public class Transaccion {
 
     private String clienteId;
     private Integer fondoId;
-    private String tipo; // APERTURA o CANCELACION
+    private TipoTransaccion tipo; // APERTURA o CANCELACION
     private Double monto;
     private LocalDateTime fecha;
 }

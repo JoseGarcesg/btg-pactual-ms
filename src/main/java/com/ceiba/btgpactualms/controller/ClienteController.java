@@ -29,12 +29,11 @@ public class ClienteController {
         return repository.findAll();
     }
 
-    @PostMapping("/{id}/fondos")
+    @PostMapping("/fondos")
     public Cliente suscribeClient(
-            @PathVariable String id,
             @RequestBody SuscripcionRequest request
     ) {
-        return clienteService.suscribirse(id, request);
+        return clienteService.suscribirse(request);
     }
 
     @DeleteMapping("/{id}/fondos/{fondoId}")
