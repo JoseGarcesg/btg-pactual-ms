@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Backend Spring Boot Java 21 + Gradle + MongoDB Atlas
+
+Parameters:
+
+  KeyName:
+    Description: KeyPair para acceso SSH
+    Type: AWS::EC2::KeyPair::KeyName
+
+  InstanceType:
+    Type: String
+    Default: t2.micro
+
+Resources:
+
+  BackendSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP and SSH access
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+
+  BackendInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+
+      SecurityGroups:
+        - !Ref BackendSecurityGroup
+
+      ImageId: ami-0c02fb55956c7d316  # Amazon Linux 2 (puede variar por región)
+
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+
+          yum update -y
+
+          # Instalar Java 21
+          rpm --import https://yum.corretto.aws/corretto.key
+
+          curl -L -o /etc/yum.repos.d/corretto.repo \
+          https://yum.corretto.aws/corretto.repo
+          yum install -y java-21-amazon-corretto-devel
+
+          # Crear carpeta app
+          mkdir -p /home/ec2-user/app
+
+          # Descargar JAR
+          cd /home/ec2-user/app
+
+          wget https://TU_URL_DE_JAR/app.jar
+
+          # Variables de entorno para Mongo Atlas
+          echo "export SPRING_DATA_MONGODB_URI='mongodb+srv://josegarcesg:admin123@cluster0.042vwn7.mongodb.net/btg-db'" >> /etc/profile
+
+          source /etc/profile
+
+          # Ejecutar backend
+          nohup java -jar app.jar > app.log 2>&1 &
