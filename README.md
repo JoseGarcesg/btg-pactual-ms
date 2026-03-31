@@ -92,15 +92,24 @@ Authorization: Bearer <token>
 
 http://localhost:8080/swagger-ui/index.html
 http://localhost:8080/v3/api-docs
+### api-doc.json
+https://github.com/JoseGarcesg/btg-pactual-ms/blob/main/api-docs.json
 
+---
+
+##POSTMAN collection
+https://github.com/JoseGarcesg/btg-pactual-ms/blob/main/BTG-api.postman_collection.json
 ---
 
 ## ☁️ AWS Deploy
 
 aws cloudformation deploy \
-  --template-file infrastructure.yml \
+  --template-file template.yml \
   --stack-name btg-pactual-ms \
   --capabilities CAPABILITY_NAMED_IAM
+
+  # clodFormation template
+  https://github.com/JoseGarcesg/btg-pactual-ms/blob/main/template.yaml
 
 ---
 
