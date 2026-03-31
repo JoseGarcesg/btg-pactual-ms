@@ -97,7 +97,7 @@ https://github.com/JoseGarcesg/btg-pactual-ms/blob/main/api-docs.json
 
 ---
 
-##POSTMAN collection
+## POSTMAN collection
 https://github.com/JoseGarcesg/btg-pactual-ms/blob/main/BTG-api.postman_collection.json
 ---
 
